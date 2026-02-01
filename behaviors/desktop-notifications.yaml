@@ -18,6 +18,10 @@ hooks:
       show_iteration_count: true
       sound: false
 
+agents:
+  include:
+    - notify:notify-expert
+
 context:
   include:
     - notify:context/NOTIFICATIONS.md
