@@ -76,6 +76,7 @@ class NotifyConfig:
     min_iterations: int = 1
     show_iteration_count: bool = True
     sound: bool = False
+    bell: bool = True  # Send terminal bell (\x07) alongside notification (tab highlight)
     debug: bool = False
     # Message content options
     show_device: bool = True  # Show device/hostname in notification
@@ -358,6 +359,30 @@ def send_terminal_notification(
             else f"to {tty_desc}"
         )
         return True, detail
+    except Exception as e:
+        return False, str(e)
+
+
+def send_bell() -> tuple[bool, str | None]:
+    """Send terminal bell (BEL character) for tab highlighting.
+
+    Works universally — any terminal, any SSH chain, even dumb terminals.
+    In WezTerm with the amplifier-cli-tools bell handler, this turns the
+    background tab yellow until the user switches to it.
+    """
+    tty_path, tty_desc = get_tty_for_output()
+    if tty_path is None and tty_desc == "no terminal available":
+        return False, "No terminal available for bell"
+    try:
+        bell = "\x07"
+        if tty_path:
+            with open(tty_path, "w") as tty:
+                tty.write(bell)
+                tty.flush()
+        else:
+            sys.stdout.write(bell)
+            sys.stdout.flush()
+        return True, f"bell to {tty_desc}"
     except Exception as e:
         return False, str(e)
 
@@ -924,6 +949,15 @@ class NotifyHooks:
             sound=self.config.sound,
             method=self.config.method,
         )
+
+        # Send terminal bell alongside the notification (for tab highlighting)
+        if self.config.bell:
+            bell_ok, bell_detail = send_bell()
+            if self.config.debug:
+                if bell_ok:
+                    logger.debug(f"Bell sent: {bell_detail}")
+                else:
+                    logger.debug(f"Bell failed: {bell_detail}")
 
         if self.config.debug:
             method_used = (

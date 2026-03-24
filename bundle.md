@@ -16,7 +16,8 @@ This bundle provides desktop and terminal notifications when the assistant compl
 ## Features
 
 - **Cross-platform support**: macOS, Linux, Windows/WSL
-- **SSH-aware**: Uses terminal bell sequences over SSH, desktop notifications locally
+- **SSH-aware**: Uses terminal escape sequences over SSH, desktop notifications locally
+- **Terminal bell**: Fires BEL character to highlight background tabs (e.g., WezTerm turns tab yellow)
 - **Focus detection**: Optionally suppress notifications when terminal is focused
 - **Mobile push**: Optional ntfy.sh integration for mobile devices
 - **Extensible**: Emits `notify:turn-complete` event for custom notification handlers
@@ -54,6 +55,7 @@ hooks:
       min_iterations: 1
       show_iteration_count: true
       sound: false
+      bell: true            # Terminal bell for tab highlighting
 ```
 
 ## Disabling Notifications

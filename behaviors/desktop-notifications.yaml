@@ -17,6 +17,7 @@ hooks:
       min_iterations: 1
       show_iteration_count: true
       sound: false
+      bell: true            # Terminal bell for tab highlighting (WezTerm turns tab yellow)
 
 agents:
   include:
