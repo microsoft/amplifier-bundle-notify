@@ -1,6 +1,6 @@
 bundle:
   name: behavior-desktop-notifications
-  version: 1.0.0
+  version: 1.1.0
   description: |
     Desktop and terminal notifications when assistant turns complete.
     Supports macOS, Linux, Windows/WSL, and SSH sessions.
@@ -23,6 +23,6 @@ agents:
   include:
     - notify:notify-expert
 
-context:
-  include:
-    - notify:context/NOTIFICATIONS.md
+# Heavy reference doc (NOTIFICATIONS.md) is loaded via the notify-expert agent body
+# (context-sink pattern). Always-on context.include is intentionally empty —
+# the agent's meta.description is the discovery mechanism for "notify domain exists".
