@@ -62,6 +62,8 @@ This is the canonical event for "assistant turn finished, ready for user input."
 | `orchestrator` | string | Name of orchestrator (e.g., "loop-streaming") |
 | `turn_count` | int | Number of LLM iterations in this turn |
 | `status` | string | "success" or "incomplete" |
+| `goal_turn` | int \| None | Which continuation iteration this emission belongs to, for orchestrators that run multiple internal iterations to satisfy one user prompt. `None` when no such continuation is active. |
+| `goal_final` | bool | Whether this emission is the true end of the user's turn - `False` on intermediate continuation iterations, `True` on the one that corresponds to a finished user turn. **Missing on orchestrators without this concept - treat absence as `True`.** Consumers that treat `orchestrator:complete` as "notify/act now" must check this field and skip when it is explicitly `False`. See `EVENTS.md` for the full contract. |
 
 ### Emission Points
 
