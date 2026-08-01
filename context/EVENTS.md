@@ -16,7 +16,9 @@ await hooks.emit(
     {
         "orchestrator": "loop-streaming",
         "turn_count": 3,
-        "status": "success"
+        "status": "success",
+        "goal_turn": None,
+        "goal_final": True
     }
 )
 ```
@@ -26,10 +28,19 @@ await hooks.emit(
 | `orchestrator` | str | Name of the orchestrator module |
 | `turn_count` | int | Number of LLM iterations in this turn |
 | `status` | str | "success" or "incomplete" |
+| `goal_turn` | int \| None | Which continuation iteration this emission belongs to, when the orchestrator runs multiple internal iterations to satisfy a single user prompt. `None` when no such continuation is active. |
+| `goal_final` | bool | Whether this emission is the true end of the user's turn. `False` on an intermediate continuation iteration (more work follows); `True` on the one emission that corresponds to a finished user turn. **Absent** on orchestrators that don't implement continuation iterations - consumers must treat a missing field as `True` (every emission is final). |
+
+**Consumer guidance:** any hook that treats `orchestrator:complete` as "the turn is
+done, notify/act now" must check `goal_final` and skip when it is explicitly
+`False`. This is not specific to any one orchestrator or feature - it's the
+general signal for "is this turn actually over" on this event. Treat a missing
+`goal_final` as `True` for backward compatibility with orchestrators that don't
+emit it.
 
 **Emitted by:**
-- `loop-basic` ✅
-- `loop-streaming` ✅
+- `loop-basic` ✅ (no `goal_turn`/`goal_final` - always final)
+- `loop-streaming` ✅ (emits `goal_turn`/`goal_final` when continuation iterations are active)
 
 ### `prompt:complete`
 

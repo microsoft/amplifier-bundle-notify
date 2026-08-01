@@ -894,6 +894,22 @@ class NotifyHooks:
                 )
             return HookResult(action="continue")
 
+        # `goal_final` is a general contract field on orchestrator:complete (NOT a
+        # /goal-specific concept): it means "this emission is the true end of the
+        # user's turn". Any orchestrator that runs multiple internal continuation
+        # iterations for a single user prompt can emit orchestrator:complete once
+        # per iteration, with goal_final=False on every intermediate emission and
+        # goal_final=True only on the one that corresponds to a finished user turn.
+        # Notify cares about turn *completion*, so it honors this field generically.
+        # Absent means the producing orchestrator has no such concept and every
+        # turn it emits is final - treat missing as True for backward compatibility.
+        if data.get("goal_final", True) is False:
+            if self.config.debug:
+                logger.debug(
+                    f"Skipping notification: non-final turn (goal_turn={data.get('goal_turn')}, goal_final=False)"
+                )
+            return HookResult(action="continue")
+
         # Check if we should suppress due to terminal being focused
         if self.config.suppress_if_focused:
             focused = is_terminal_focused()

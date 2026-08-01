@@ -110,6 +110,21 @@ class PushNotifyHook:
         if data.get("parent_id"):
             return HookResult(action="continue")
 
+        # `goal_final` is a general contract field on orchestrator:complete (NOT a
+        # /goal-specific concept): it means "this emission is the true end of the
+        # user's turn". This only matters when listening directly to
+        # orchestrator:complete (independent operation mode) - notify:turn-complete
+        # is already final by construction, and its data never carries this key, so
+        # the check is a no-op on that path. Absent means the producing orchestrator
+        # has no such concept and every turn it emits is final - treat missing as
+        # True for backward compatibility.
+        if data.get("goal_final", True) is False:
+            if self.config.debug:
+                logger.debug(
+                    f"Skipping push: non-final turn (goal_turn={data.get('goal_turn')}, goal_final=False)"
+                )
+            return HookResult(action="continue")
+
         # Build notification content
         if event == "notify:turn-complete":
             # Semantic event from hooks-notify - use pre-computed values
