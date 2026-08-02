@@ -1,0 +1,74 @@
+// The "notify" bundle: an add-on for Amplifier that tells you — on your computer screen or on your phone — when a long-running task has finished.
+digraph notify {
+    rankdir=LR
+    fontname="Helvetica"
+    fontsize=12
+    label="Notify — Alerts When Your Work Finishes\nWhat's inside this repository and how the pieces connect"
+    labelloc=t
+    labeljust=c
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="62c7a786f33aa46505b42fc6b436bda150082fbb4f97c825a50b9be4d5724d50"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    root_notify [label="Notify — the add-on itself\nv0.2.0 · 0 tools · 0 agents\n~808 tok aggregate", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", penwidth=2]
+
+    subgraph cluster_behaviors {
+        label="Behaviors — the two things it can do"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        beh_behavior_desktop_notifications [label="Pop-up alerts on your computer\n1 tools\n~712 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+        beh_behavior_push_notifications [label="Push alerts to your phone\n1 tools\n~205 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+    }
+
+    subgraph cluster_agents {
+        label="Agents — built-in helpers you can ask"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        agt_notify_expert [label="Setup helper for notifications\n(notify-expert)\n~456 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+    }
+
+    subgraph cluster_modules {
+        label="Modules — the code that actually sends alerts"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        mod_hooks_notify [label="Desktop alert sender\n(hooks-notify)", shape=box, fillcolor="#bbdefb", style="filled,rounded"]
+        mod_hooks_notify_push [label="Phone alert sender\n(hooks-notify-push)", shape=box, fillcolor="#bbdefb", style="filled,rounded"]
+    }
+
+    subgraph cluster_legend {
+        label="Legend — what each color means"
+        style="filled"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=9
+
+        leg_root [label="the add-on itself", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", fontsize=9]
+        leg_behavior [label="a thing it can do", shape=box, fillcolor="#e0f2f1", style="filled,rounded", fontsize=9]
+        leg_agent [label="a helper you can ask", shape=box, fillcolor="#c8e6c9", style="filled,rounded", fontsize=9]
+        leg_module [label="code that does the work", shape=box, fillcolor="#bbdefb", style="filled,rounded", fontsize=9]
+        leg_provider [label="AI service it talks to", shape=box, fillcolor="#e0e0e0", style="filled,rounded", fontsize=9]
+        leg_context [label="reference notes", shape=box, fillcolor="#e1bee7", style="filled,rounded", fontsize=9]
+        leg_standalone [label="works on its own", shape=box, fillcolor="#80cbc4", style="filled,rounded", fontsize=9]
+        leg_experiment [label="experimental", shape=box, fillcolor="#e1bee7", style="filled,rounded", fontsize=9]
+        leg_ext_cost [label="comes from elsewhere,\nadds hidden cost", shape=box, fillcolor="#80cbc4", style="dashed", color="red", penwidth=2, fontsize=9]
+        leg_ext_muted [label="comes from elsewhere,\nno added cost", shape=box, fillcolor="#f5f5f5", style="dashed", fontsize=9]
+    }
+
+    disclaimer [label="Token estimates: ~4 chars/token\nSolid border = local (counted)\nDashed + red = external, hidden cost (not counted)\nDashed + muted = external, no cost\nExcludes: sub-session costs, runtime-dynamic", shape=note, fillcolor="#eceff1", style="filled", fontsize=9]
+
+
+    root_notify -> beh_behavior_desktop_notifications [label="composes"]
+    beh_behavior_desktop_notifications -> agt_notify_expert [label="owns"]
+    beh_behavior_desktop_notifications -> mod_hooks_notify [label="uses", penwidth=0.8]
+    beh_behavior_push_notifications -> mod_hooks_notify_push [label="uses", penwidth=0.8]
+}
