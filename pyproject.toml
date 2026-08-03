@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Microsoft", email = "amplifier@microsoft.com" }]
-dependencies = []  # amplifier-core is a peer dependency, not on PyPI
+dependencies = []  # amplifier-core is provided by the host Amplifier install, not a direct dep
 
 [project.entry-points."amplifier.bundles"]
 notify = "amplifier_bundle_notify:get_bundle_path"
