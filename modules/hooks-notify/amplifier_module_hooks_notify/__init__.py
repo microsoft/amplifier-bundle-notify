@@ -233,8 +233,35 @@ def wrap_for_screen(sequence: str) -> str:
 # =============================================================================
 
 
+def owns_controlling_terminal() -> bool:
+    """Whether this process actually owns a controlling terminal.
+
+    Opening /dev/tty succeeds only for a process that has a controlling
+    terminal. A process detached into its own session - such as a nested
+    `amplifier run` spawned as a subprocess by the bash tool - has none, and
+    the open fails with ENXIO.
+
+    This is the ownership test that environment variables cannot provide.
+    TMUX and SSH_TTY are inherited by every descendant process, so they only
+    say "a terminal exists somewhere in my ancestry" - not "that terminal is
+    mine to write to". Writing to a terminal we do not own hijacks another
+    session's display: the classic symptom is a nested one-shot run ringing
+    the bell in the interactive session that spawned it, mid-turn.
+    """
+    try:
+        with open("/dev/tty", "w"):
+            return True
+    except (IOError, OSError):
+        return False
+
+
 def get_tty_for_output() -> tuple[str | None, str | None]:
     """Get the best file descriptor for writing OSC sequences.
+
+    Only ever resolves to a terminal this process actually owns. A process
+    with no controlling terminal gets "no terminal available" even when it has
+    inherited SSH_TTY/TMUX from an interactive ancestor - see
+    `owns_controlling_terminal`.
 
     Returns:
         Tuple of (file_path_or_None, description)
@@ -243,35 +270,29 @@ def get_tty_for_output() -> tuple[str | None, str | None]:
         - For interactive terminal: None (use stdout)
         - Otherwise: None with error description
     """
+    owns_terminal = owns_controlling_terminal()
+
     # Inside tmux - use /dev/tty (the tmux pane's PTY)
     # NOT SSH_TTY, which is the SSH connection's PTY that tmux reads from
-    if is_inside_tmux():
-        if os.path.exists("/dev/tty"):
-            try:
-                with open("/dev/tty", "w") as f:
-                    pass
-                return "/dev/tty", "tmux pane TTY (/dev/tty)"
-            except (IOError, OSError):
-                pass
+    if is_inside_tmux() and owns_terminal:
+        return "/dev/tty", "tmux pane TTY (/dev/tty)"
 
-    # SSH session (no tmux) - use SSH_TTY directly to bypass piped stdout
+    # SSH session (no tmux) - use SSH_TTY directly to bypass piped stdout.
+    # Gated on owning a controlling terminal: SSH_TTY is an inherited env var,
+    # and a detached subprocess must not write to its parent's terminal.
     ssh_tty = os.environ.get("SSH_TTY")
-    if ssh_tty and os.path.exists(ssh_tty):
+    if ssh_tty and owns_terminal and os.path.exists(ssh_tty):
         return ssh_tty, f"SSH TTY ({ssh_tty})"
 
-    # Check if stdout is a TTY
+    # Check if stdout is a TTY. Not gated on terminal ownership: if stdout is
+    # a terminal then that is where all of this process's output already goes,
+    # so writing there is not hijacking someone else's display.
     if sys.stdout.isatty():
         return None, "stdout"  # None means use stdout
 
-    # Try /dev/tty as fallback (controlling terminal)
-    if os.path.exists("/dev/tty"):
-        try:
-            # Test if we can open it
-            with open("/dev/tty", "w") as f:
-                pass
-            return "/dev/tty", "controlling terminal"
-        except (IOError, OSError):
-            pass
+    # Fall back to the controlling terminal itself
+    if owns_terminal:
+        return "/dev/tty", "controlling terminal"
 
     return None, "no terminal available"
 
