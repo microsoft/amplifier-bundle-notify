@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Minimal read-only token -- no secrets needed or exposed.
+# Safe for Dependabot PRs and external fork contributors.
+permissions:
+  contents: read
+
+# No `paths:` filters anywhere in this file, on purpose. A path filter that
+# does not match leaves a required check permanently "expected" (or silently
+# absent), which is indistinguishable from a passing one. These jobs are cheap;
+# they run on every push and PR.
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # Lint -- pyflakes + pycodestyle errors across the whole repo.
+  #
+  # This repo carries no [tool.ruff] config and no uv.lock, so the sibling
+  # template's `uv sync --frozen --only-group dev && uv run ruff` shape does not
+  # apply. Instead the tool and the rule set are both pinned here:
+  #
+  #   * ruff 0.16.6      -- pinned so a future ruff release cannot turn this red
+  #                         without a visible change to this file.
+  #   * --isolated       -- ignore any ruff config, including one added later,
+  #                         so the gate means the same thing every run.
+  #   * --select E4,E7,E9,F
+  #                      -- ruff's own classic default tier: pycodestyle errors
+  #                         plus pyflakes (undefined names, unused imports,
+  #                         f-string bugs). Verified clean on main @7f5ff46.
+  #
+  # `ruff format --check` is deliberately NOT run here: at 7f5ff46 it reports
+  # 4 files would be reformatted, and reformatting the source is out of scope
+  # for a workflow-only PR. See the PR body.
+  # ────────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-caching: true
+
+      - name: Lint (ruff)
+        run: uvx ruff@0.16.6 check --isolated --select E4,E7,E9,F .
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Per-module tests. Both shipped modules are covered and both really do have
+  # tests:
+  #
+  #   modules/hooks-notify       -- tests/test_goal_final.py, tests/test_terminal_ownership.py  (11 tests)
+  #   modules/hooks-notify-push  -- tests/test_goal_final.py                                    (4 tests)
+  #
+  # No `--frozen`: unlike the sibling template, this repo commits no uv.lock,
+  # at the root or in either module. Dependencies resolve fresh each run.
+  # ────────────────────────────────────────────────────────────────────────────
+  test-modules:
+    name: Tests — ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - hooks-notify
+          - hooks-notify-push
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-caching: true
+
+      - name: Install dependencies
+        working-directory: modules/${{ matrix.module }}
+        run: uv sync --extra dev
+
+      # hooks-notify-push imports `amplifier_core`
+      # (amplifier_module_hooks_notify_push/__init__.py:37) but does not declare
+      # it in [project].dependencies -- unlike its sibling hooks-notify, which
+      # does. Without this step its test collection dies with
+      # ModuleNotFoundError in a clean environment. Installed explicitly here so
+      # the gate is honest about the TESTS while leaving the one-line packaging
+      # fix to the maintainer. This step should be deleted once
+      # `amplifier-core>=0.1.0` is added to that module's dependencies.
+      - name: Install amplifier-core (undeclared by hooks-notify-push)
+        if: matrix.module == 'hooks-notify-push'
+        working-directory: modules/hooks-notify-push
+        run: uv pip install 'amplifier-core>=0.1.0'
+
+      - name: Run tests
+        working-directory: modules/${{ matrix.module }}
+        # --no-sync: do not let uv re-resolve and drop the step above.
+        run: uv run --no-sync pytest tests/ -q --tb=short
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Bundle structure -- every YAML this bundle ships must parse and carry a
+  # bundle.name. Kept inline rather than as a checked-in script because this PR
+  # deliberately adds no file to the repo other than this workflow.
+  #
+  # Nothing is interpolated into the Python source below (no ${{ }} inside the
+  # heredoc, and the heredoc delimiter is quoted) -- a repo path interpolated
+  # into Python source is how a sibling repo turned a backslash-a into BEL and
+  # got a silent empty result with exit 0.
+  # ────────────────────────────────────────────────────────────────────────────
+  bundle-structure:
+    name: Bundle structure (YAML)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet 'PyYAML>=6.0'
+
+      - name: Parse bundle.md frontmatter and behaviors/*.yaml
+        run: |
+          python - <<'PY'
+          import pathlib
+          import sys
+
+          import yaml
+
+          root = pathlib.Path.cwd()
+          failures: list[str] = []
+          checked = 0
+
+          bundle_md = root / "bundle.md"
+          if not bundle_md.is_file():
+              failures.append("bundle.md is missing")
+          else:
+              text = bundle_md.read_text(encoding="utf-8")
+              if not text.startswith("---\n"):
+                  failures.append("bundle.md: no YAML frontmatter (file does not open with '---')")
+              else:
+                  end = text.find("\n---", 3)
+                  if end == -1:
+                      failures.append("bundle.md: frontmatter opened but never closed")
+                  else:
+                      data = None
+                      try:
+                          data = yaml.safe_load(text[4 : end + 1])
+                          checked += 1
+                      except yaml.YAMLError as exc:
+                          failures.append("bundle.md frontmatter: " + str(exc))
+                      if data is not None:
+                          name = data.get("bundle", {}).get("name") if isinstance(data, dict) else None
+                          if not name:
+                              failures.append("bundle.md frontmatter: missing bundle.name")
+                          else:
+                              print("OK  bundle.md  (bundle.name=" + str(name) + ")")
+
+          behaviors = sorted((root / "behaviors").glob("*.yaml"))
+          if not behaviors:
+              failures.append(
+                  "behaviors/*.yaml matched NOTHING -- a structure gate that checks zero files is decoration"
+              )
+          for path in behaviors:
+              # .as_posix(), not str(): str() emits OS-native separators.
+              rel = path.relative_to(root).as_posix()
+              try:
+                  data = yaml.safe_load(path.read_text(encoding="utf-8"))
+                  checked += 1
+              except yaml.YAMLError as exc:
+                  failures.append(rel + ": " + str(exc))
+                  continue
+              name = data.get("bundle", {}).get("name") if isinstance(data, dict) else None
+              if not name:
+                  failures.append(rel + ": missing bundle.name")
+              else:
+                  print("OK  " + rel + "  (bundle.name=" + str(name) + ")")
+
+          print("")
+          print(str(checked) + " YAML document(s) parsed.")
+          if failures:
+              print("")
+              print("FAILURES:")
+              for item in failures:
+                  print("  - " + item)
+              sys.exit(1)
+          print("Bundle structure OK.")
+          PY
