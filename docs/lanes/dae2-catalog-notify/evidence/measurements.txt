@@ -1,0 +1,37 @@
+MEASUREMENTS -- amplifier-bundle-notify delegate-catalog sweep (lane dae2)
+baseline: CURRENT origin/main @ 01ea1f1  (earlier census said ~1,852 chars; ACTUAL is 1,825 -- baseline had drifted)
+
+AGENT CENSUS -- this repo ships exactly ONE agent.
+  agents/notify-expert.md   (only file in the repo carrying a top-level `meta:` frontmatter key)
+  behaviors/*.yaml carry `bundle.description`, not an agent description -- not in the delegate catalog.
+
+DESCRIPTION CHAR COUNTS (parsed YAML scalar value, i.e. what the delegate catalog receives)
+  agent                    before    after    delta      pct
+  notify-expert              1825      594    -1231   -67.5%
+  REPO TOTAL                 1825      594    -1231   -67.5%
+
+STANDARD COMPLIANCE (after)
+  trigger-first (opens 'USE WHEN'): True
+  <=600 chars                     : True  (594)
+  explicit USE WHEN               : True
+  explicit DO NOT USE WHEN        : True
+  <example> blocks                : 0  (stock: 2)
+  <commentary> blocks             : 0  (stock: 2)
+
+BODY BYTE-IDENTITY (everything after the closing frontmatter '---')
+  stock body :  2356 chars  md5 ab7abb228780435b87ab347e5687014b
+  lean  body :  2356 chars  md5 ab7abb228780435b87ab347e5687014b
+  IDENTICAL  : True
+
+OTHER FRONTMATTER KEYS -- unchanged
+  meta.name  : notify-expert -> notify-expert
+  model_role : general -> general
+
+WHOLE-FILE
+  stock file :  4363 chars  md5 5a6bba0dab8f5700cdb2db555d2d1f61
+  lean  file :  3060 chars  md5 e1de65b6673a79479dcf02e4341967a3
+
+LEAN DESCRIPTION, VERBATIM (parsed scalar):
+------------------------------------------------------------------------------
+USE WHEN notifications are the subject: alerts not firing or misfiring; choosing terminal bell vs desktop vs mobile push; adding a webhook or Slack/Teams handler; picking which events to hook (`orchestrator:complete`, `goal_final`); platform-specific breakage on WSL, macOS, Linux or SSH. Owns the notify bundle end to end -- config, troubleshooting, extension: `hooks-notify`, `hooks-notify-push`, ntfy.sh, `notify:turn-complete`, `suppress_if_focused`, `AMPLIFIER_NOTIFY`, `AMPLIFIER_NTFY_TOPIC`. DO NOT USE WHEN the subject is the Amplifier CLI itself, or a non-notification module or hook.
+------------------------------------------------------------------------------

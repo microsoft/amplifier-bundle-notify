@@ -1,0 +1,34 @@
+validate-agents v1.8.0 -- DETERMINISTIC phases 0-3 only, $0 (no LLM, no provider call, no `amplifier` invocation)
+recipe: <amplifier-cache>/amplifier-foundation-c909465861f9d6ce/recipes/validate-agents.yaml
+runner: docs/lanes/dae2-catalog-notify/run_validate_phases.py (executes the recipe's own bash heredocs verbatim)
+
+===== BEFORE (stock, origin/main 01ea1f1) =====
+recipe version: 1.8.0
+repo: <stock-worktree>
+agents discovered: 1
+location_counts: {'agents/': 1}
+candidates_scanned: 1
+non_agent_count: 0
+structural summary: {'total': 1, 'passed': 0, 'errors': 3, 'warnings': 1}
+quality_level: critical
+quality summary: {'total': 1, 'good': 0, 'polish': 0, 'needs_work': 0, 'critical': 1}
+  notify-expert            chars= 1825 examples=2 commentary=2 errors=['DESCRIPTION_EXCESSIVE', 'COMMENTARY_TAG_PRESENT', 'EXAMPLE_BLOCK_PRESENT'] warnings=['NO_TOOLS_SECTION']
+
+===== AFTER (branch lane/dae2-catalog-notify) =====
+recipe version: 1.8.0
+repo: <repo>
+agents discovered: 1
+location_counts: {'agents/': 1}
+candidates_scanned: 1
+non_agent_count: 0
+structural summary: {'total': 1, 'passed': 1, 'errors': 0, 'warnings': 1}
+quality_level: needs_work
+quality summary: {'total': 1, 'good': 0, 'polish': 0, 'needs_work': 1, 'critical': 0}
+  notify-expert            chars=  594 examples=0 commentary=0 errors=[] warnings=['NO_TOOLS_SECTION']
+
+VERDICT MAPPING (recipe Phase 6 'Verdict Selection', quoted):
+  good -> PASS | polish -> PASS WITH SUGGESTIONS | needs_work -> PASS WITH WARNINGS | critical -> FAIL
+  BEFORE quality_level=critical   => FAIL
+  AFTER  quality_level=needs_work => PASS WITH WARNINGS
+  The sole remaining warning, NO_TOOLS_SECTION, is BYTE-IDENTICAL to stock (pre-existing,
+  out of scope for a description-only sweep: adding a tools: key would change runtime behaviour).
