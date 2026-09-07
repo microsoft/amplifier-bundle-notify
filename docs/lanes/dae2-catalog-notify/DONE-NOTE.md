@@ -184,7 +184,21 @@ All three CI jobs run locally on the branch:
 
 The repo **does** have CI: `.github/workflows/ci.yml`, added on `main` @ `01ea1f1` after
 this lane's branch point. The branch was fast-forwarded onto `01ea1f1` before any edit,
-so the PR runs against it. Live CI state is on the PR.
+so the PR runs against it.
+
+**Live CI on draft PR #13, commit `4866cff`, run `34167788402` — all green:**
+
+```
+Bundle structure (YAML)     pass   5s
+Lint                        pass   6s
+Tests — hooks-notify        pass   7s
+Tests — hooks-notify-push   pass   6s
+license/cla                 pass   0s
+```
+
+(This note is itself a later commit on the same branch, so the PR shows a newer run of
+the same five checks; the run quoted above is the one that graded the substantive
+change.)
 
 ---
 
