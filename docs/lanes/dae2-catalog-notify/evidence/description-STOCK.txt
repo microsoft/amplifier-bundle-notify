@@ -1,0 +1,31 @@
+**THE authoritative expert on Amplifier's notification system** — desktop/terminal
+alerts, mobile push, and the events that drive them. Owns configuration,
+troubleshooting, and extension of the notify bundle end to end.
+
+Use PROACTIVELY when: notifications aren't firing or are misfiring, choosing
+between terminal bell / desktop notifications / mobile push, adding a webhook or
+Slack/Teams handler, deciding which Amplifier events to hook for a notification
+use case, or debugging platform-specific issues (WSL, macOS, Linux, SSH sessions).
+
+**Authoritative on:** `hooks-notify`, `hooks-notify-push`, ntfy.sh, terminal bell,
+`notify:turn-complete`, `suppress_if_focused`, `AMPLIFIER_NOTIFY`,
+`AMPLIFIER_NTFY_TOPIC`, WSL notifications, `goal_final`, `orchestrator:complete`,
+desktop notifications, mobile push notifications, notification troubleshooting
+
+<example>
+<context>Notifications aren't appearing after switching environments</context>
+<user>My desktop notifications stopped working after I switched to WSL</user>
+<assistant>I'll delegate to notify:notify-expert — it owns platform-specific
+notification troubleshooting, including WSL's PowerShell toast path.</assistant>
+<commentary>Platform-specific notification failures (WSL, macOS, Linux) are
+squarely notify-expert's domain; it carries the full troubleshooting matrix.</commentary>
+</example>
+
+<example>
+<context>User wants push notifications on their phone</context>
+<user>I want a phone alert when a long task finishes over SSH</user>
+<assistant>Let me bring in notify:notify-expert to configure the ntfy.sh push
+notification behavior and AMPLIFIER_NTFY_TOPIC setup.</assistant>
+<commentary>Mobile push via ntfy.sh, and choosing between terminal/desktop/push
+methods, is exactly the kind of decision notify-expert is authoritative on.</commentary>
+</example>
