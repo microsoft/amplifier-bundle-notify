@@ -102,6 +102,20 @@ includes:
 
 **Warning**: Direct inclusion fires for ALL sessions including sub-agents. Use the `settings.yaml` approach above for policy-aware notifications.
 
+To include only the desktop behavior (no root bundle):
+
+```yaml
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-notify@main#subdirectory=behaviors/desktop-notifications.yaml
+```
+
+And the push behavior:
+
+```yaml
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-notify@main#subdirectory=behaviors/push-notifications.yaml
+```
+
 ## Components
 
 | Component | Description |
@@ -158,6 +172,13 @@ AMPLIFIER_NOTIFY=false amplifier run "..."
 # ~/.amplifier/settings.yaml
 config:
   notifications: {}  # Empty = disabled
+```
+
+**Option 3: Profile exclusion**
+
+```yaml
+exclude:
+  hooks: [hooks-notify]
 ```
 
 ## Events
